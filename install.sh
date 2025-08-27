@@ -82,6 +82,7 @@ install_elysium() {
     cd pterodactyl || { echo -e "${MERAH}Direktori Pterodactyl tidak ditemukan.${RESET}"; exit 1; }
     php artisan migrate
     yarn
+    export NODE_OPTIONS=--openssl-legacy-provider
     yarn build:production
     php artisan optimize:clear
     echo -e "${HIJAU}Tema Elysium berhasil diinstal!${RESET}"
