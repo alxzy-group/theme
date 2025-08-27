@@ -29,4 +29,4 @@ Sebelum menjalankan skrip, pastikan sistem Anda memenuhi persyaratan berikut:
 Untuk memulai instalasi, cukup salin perintah di bawah ini dan jalankan di terminal server Anda. Skrip akan diunduh dan dieksekusi secara otomatis.
 
 ```bash
-curl -sSL [https://raw.githubusercontent.com/alands-offc/theme/main/install.sh](https://raw.githubusercontent.com/alands-offc/theme/main/install.sh) | sudo bash
+curl -sSL (https://raw.githubusercontent.com/alands-offc/theme/main/install.sh) | sudo bash
