@@ -67,7 +67,7 @@ install_nebula() {
     wget "$nebula"
     unzip -o nebula.zip
     cd pterodactyl || { echo -e "${MERAH}Direktori Pterodactyl tidak ditemukan.${RESET}"; exit 1; }
-    php artisan blueprint:install nebula
+    blueprint -install nebula
     echo -e "${HIJAU}Tema Nebula berhasil diinstal!${RESET}"
     exit 0
 }
