@@ -89,19 +89,23 @@ install_elysium() {
     exit 0
 }
 install_nooktheme() {
+  install_nodejs
   echo -e "${KUNING}installing nook theme ${RESET}"
   cd /var/www/pterodactyl
   php artisan down
-  curl -L https://github.com/Nookure/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
+  curl -L https://github.com/alands-offc/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
   chmod -R 755 storage/* bootstrap/cache
   composer install --no-dev --optimize-autoloader
+  yarn
+  export NODE_OPTIONS=--openssl-legacy-provider
+  yarn build:production 
   php artisan view:clear
   php artisan config:clear
   php artisan migrate --seed --force
   chown -R www-data:www-data /var/www/pterodactyl/*
   php artisan queue:restart
   php artisan up
-  echo -e "${HIJAU} Instalasi nook theme selesai ${RESET}"
+  echo -e "${HIJAU} Instalasi nook theme remake by alxzy selesai ${RESET}"
 }
 clear
 check_distro
@@ -113,7 +117,7 @@ echo -e "${HIJAU}Silakan memilih tema yang tersedia di bawah ini${RESET}"
 sleep 1
 PS3="Pilih tema (1-4): "
 
-select theme in "NebulaTheme" "ElysiumTheme" "NookTheme" "Keluar"; do
+select theme in "NebulaTheme" "ElysiumTheme" "NookTheme (Remake)" "Keluar"; do
     case $theme in
         "NebulaTheme")
             install_nebula
@@ -123,7 +127,7 @@ select theme in "NebulaTheme" "ElysiumTheme" "NookTheme" "Keluar"; do
             install_elysium
             break
             ;;
-        "NookTheme")
+        "NookTheme (Remake)")
             install_nooktheme
           break
            ;;
