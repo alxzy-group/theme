@@ -24,16 +24,29 @@ install_nodejs() {
 
     if [ "$1" = "blueprint" ]; then
         echo -e "${HIJAU}Menggunakan Node.js 20.x untuk Blueprint.${RESET}"
-        NODE_VERSION="node_20.x"
+        NODE_VERSION="20"
     else
         echo -e "${HIJAU}Menggunakan Node.js 16.x untuk Elysium.${RESET}"
-        NODE_VERSION="node_16.x"
+        NODE_VERSION="16"
     fi
 
+    OS_VERSION=$(lsb_release -rs | cut -d. -f1)
+    OS_ID=$(lsb_release -is | tr '[:upper:]' '[:lower:]')
+
     sudo apt-get install -y ca-certificates curl gnupg
-    sudo mkdir -p /etc/apt/keyrings
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/$NODE_VERSION nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+
+    if [ "$OS_ID" = "ubuntu" ] && [ "$OS_VERSION" -le 22 ]; then
+        echo -e "${KUNING}Detected $OS_ID $OS_VERSION → menggunakan keyring + nodistro main.${RESET}"
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+            | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION}.x nodistro main" \
+            | sudo tee /etc/apt/sources.list.d/nodesource.list
+    else
+        echo -e "${KUNING}Detected $OS_ID $OS_VERSION → menggunakan setup script NodeSource.${RESET}"
+        curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
+    fi
+
     sudo apt-get update
     sudo apt-get install -y nodejs
 }
