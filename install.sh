@@ -8,6 +8,7 @@ RESET="\e[0m"
 ID=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
 nebula="https://github.com/alands-offc/Pterodactyl-nebula/raw/refs/heads/main/Thema/nebula.zip"
 elysium="https://github.com/alands-offc/alxzydb/raw/main/ElysiumTheme.zip"
+
 check_distro() {
     if [ "$ID" = "debian" ] || [ "$ID" = "ubuntu" ]; then
         echo -e "${HIJAU}Memuat konfigurasi untuk ${ID}...${RESET}"
@@ -26,7 +27,7 @@ install_nodejs() {
         echo -e "${HIJAU}Menggunakan Node.js 20.x untuk Blueprint.${RESET}"
         NODE_VERSION="20"
     else
-        echo -e "${HIJAU}Menggunakan Node.js 16.x untuk Elysium.${RESET}"
+        echo -e "${HIJAU}Menggunakan Node.js 16.x (Default).${RESET}"
         NODE_VERSION="16"
     fi
 
@@ -51,6 +52,24 @@ install_nodejs() {
     sudo apt-get install -y nodejs
 }
 
+run_yarn_build() {
+    NODE_VERSION=$(node -v)
+    NODE_MAJOR_VERSION=$(echo "$NODE_VERSION" | cut -c 2- | cut -d. -f1)
+    
+    unset NODE_OPTIONS
+
+    if [ "$NODE_MAJOR_VERSION" -gt 16 ]; then
+        echo -e "${KUNING}Node.js v${NODE_MAJOR_VERSION} terdeteksi. Menggunakan --openssl-legacy-provider...${RESET}"
+        export NODE_OPTIONS=--openssl-legacy-provider
+    else
+        echo -e "${HIJAU}Node.js v${NODE_MAJOR_VERSION} terdeteksi. Menjalankan build standar...${RESET}"
+    fi
+    
+    yarn build:production
+    
+    unset NODE_OPTIONS
+}
+
 install_blueprint() {
     echo -e "${HIJAU}Menginstall Blueprint...${RESET}"
     install_nodejs "blueprint"
@@ -63,9 +82,13 @@ install_blueprint() {
     wget "$(curl -s https://api.github.com/repos/BlueprintFramework/framework/releases/latest | grep 'browser_download_url' | cut -d '"' -f 4)" -O release.zip
     unzip -o release.zip
     touch .blueprintrc
-    echo 'WEBUSER="www-data";
+    
+    sudo tee .blueprintrc >/dev/null <<EOF
+WEBUSER="www-data";
 OWNERSHIP="www-data:www-data";
-USERSHELL="/bin/bash";' | sudo tee .blueprintrc >/dev/null
+USERSHELL="/bin/bash";
+EOF
+
     chmod +x blueprint.sh
     bash blueprint.sh
     sleep 3
@@ -95,31 +118,31 @@ install_elysium() {
     cd pterodactyl || { echo -e "${MERAH}Direktori Pterodactyl tidak ditemukan.${RESET}"; exit 1; }
     php artisan migrate
     yarn
-    export NODE_OPTIONS=--openssl-legacy-provider
-    yarn build:production
+    run_yarn_build
     php artisan optimize:clear
     echo -e "${HIJAU}Tema Elysium berhasil diinstal!${RESET}"
     exit 0
 }
+
 install_nooktheme() {
-  install_nodejs
-  echo -e "${KUNING}installing nook theme ${RESET}"
-  cd /var/www/pterodactyl
-  php artisan down
-  curl -L https://github.com/alands-offc/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
-  chmod -R 755 storage/* bootstrap/cache
-  composer install --no-dev --optimize-autoloader
-  yarn
-  export NODE_OPTIONS=--openssl-legacy-provider
-  yarn build:production 
-  php artisan view:clear
-  php artisan config:clear
-  php artisan migrate --seed --force
-  chown -R www-data:www-data /var/www/pterodactyl/*
-  php artisan queue:restart
-  php artisan up
-  echo -e "${HIJAU} Instalasi nook theme remake by alxzy selesai ${RESET}"
+    install_nodejs
+    echo -e "${KUNING}installing nook theme ${RESET}"
+    cd /var/www/pterodactyl || { echo -e "${MERAH}Direktori Pterodactyl tidak ditemukan.${RESET}"; exit 1; }
+    php artisan down
+    curl -L https://github.com/alxzy-group/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
+    chmod -R 755 storage/* bootstrap/cache
+    composer install --no-dev --optimize-autoloader
+    yarn
+    run_yarn_build
+    php artisan view:clear
+    php artisan config:clear
+    php artisan migrate --seed --force
+    chown -R www-data:www-data /var/www/pterodactyl/*
+    php artisan queue:restart
+    php artisan up
+    echo -e "${HIJAU} Instalasi nook theme remake by alxzy selesai ${RESET}"
 }
+
 clear
 check_distro
 sudo apt update -y && sudo apt upgrade -y
@@ -142,8 +165,8 @@ select theme in "NebulaTheme" "ElysiumTheme" "NookTheme (Remake)" "Keluar"; do
             ;;
         "NookTheme (Remake)")
             install_nooktheme
-          break
-           ;;
+            break
+            ;;
         "Keluar")
             echo -e "${KUNING}Terima kasih. Keluar dari installer.${RESET}"
             exit 0
