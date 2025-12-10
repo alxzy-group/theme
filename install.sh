@@ -50,6 +50,7 @@ install_nodejs() {
 
     sudo apt-get update
     sudo apt-get install -y nodejs
+    npm install -g yarn
 }
 
 run_yarn_build() {
