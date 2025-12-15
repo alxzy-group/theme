@@ -6,7 +6,7 @@ KUNING="\e[33m"
 RESET="\e[0m"
 
 ID=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
-nebula="https://github.com/alands-offc/Pterodactyl-nebula/raw/refs/heads/main/Thema/nebula.zip"
+nebula="https://github.com/alxzy-group/Pterodactyl-nebula/raw/refs/heads/main/Thema/nebula.zip"
 elysium="https://github.com/alands-offc/alxzydb/raw/main/ElysiumTheme.zip"
 
 check_distro() {
