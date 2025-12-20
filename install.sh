@@ -20,16 +20,8 @@ check_distro() {
 }
 
 install_nodejs() {
-    echo -e "${HIJAU}Menginstall Node.js...${RESET}"
-    sleep 1
-
-    if [ "$1" = "blueprint" ]; then
-        echo -e "${HIJAU}Menggunakan Node.js 20.x untuk Blueprint.${RESET}"
-        NODE_VERSION="20"
-    else
-        echo -e "${HIJAU}Menggunakan Node.js 16.x (Default).${RESET}"
-        NODE_VERSION="16"
-    fi
+    echo -e "${HIJAU}Menginstall Node.js 20 (LTS)...${RESET}"
+    NODE_VERSION="20"
 
     OS_VERSION=$(lsb_release -rs | cut -d. -f1)
     OS_ID=$(lsb_release -is | tr '[:upper:]' '[:lower:]')
@@ -37,14 +29,12 @@ install_nodejs() {
     sudo apt-get install -y ca-certificates curl gnupg
 
     if [ "$OS_ID" = "ubuntu" ] && [ "$OS_VERSION" -le 22 ]; then
-        echo -e "${KUNING}Detected $OS_ID $OS_VERSION → menggunakan keyring + nodistro main.${RESET}"
         sudo mkdir -p /etc/apt/keyrings
         curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
             | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
         echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION}.x nodistro main" \
             | sudo tee /etc/apt/sources.list.d/nodesource.list
     else
-        echo -e "${KUNING}Detected $OS_ID $OS_VERSION → menggunakan setup script NodeSource.${RESET}"
         curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo -E bash -
     fi
 
@@ -54,29 +44,15 @@ install_nodejs() {
 }
 
 run_yarn_build() {
-    NODE_VERSION=$(node -v)
-    NODE_MAJOR_VERSION=$(echo "$NODE_VERSION" | cut -c 2- | cut -d. -f1)
-    
-    unset NODE_OPTIONS
-
-    if [ "$NODE_MAJOR_VERSION" -gt 16 ]; then
-        echo -e "${KUNING}Node.js v${NODE_MAJOR_VERSION} terdeteksi. Menggunakan --openssl-legacy-provider...${RESET}"
-        export NODE_OPTIONS=--openssl-legacy-provider
-    else
-        echo -e "${HIJAU}Node.js v${NODE_MAJOR_VERSION} terdeteksi. Menjalankan build standar...${RESET}"
-    fi
-    
+    export NODE_OPTIONS=--openssl-legacy-provider
+    echo -e "${KUNING}Menjalankan build dengan OpenSSL Legacy Provider...${RESET}"
     yarn build:production
-    
     unset NODE_OPTIONS
 }
 
 install_blueprint() {
     echo -e "${HIJAU}Menginstall Blueprint...${RESET}"
-    install_nodejs "blueprint"
-    sleep 2
-    npm i -g yarn
-    sleep 1
+    install_nodejs
     cd /var/www/pterodactyl || { echo -e "${MERAH}Direktori Pterodactyl tidak ditemukan.${RESET}"; exit 1; }
     yarn
     sudo apt install -y zip unzip git curl wget
@@ -92,18 +68,16 @@ EOF
 
     chmod +x blueprint.sh
     bash blueprint.sh
-    sleep 3
     echo -e "${HIJAU}Instalasi Blueprint selesai!${RESET}"
-    cd
 }
 
 install_nebula() {
     echo -e "${KUNING}Menginstall tema Nebula...${RESET}"
     install_blueprint
-    cd /var/www || { echo -e "${MERAH}Direktori /var/www tidak ditemukan.${RESET}"; exit 1; }
+    cd /var/www || exit 1
     wget "$nebula"
     unzip -o nebula.zip
-    cd pterodactyl || { echo -e "${MERAH}Direktori Pterodactyl tidak ditemukan.${RESET}"; exit 1; }
+    cd pterodactyl || exit 1
     blueprint -install nebula
     echo -e "${HIJAU}Tema Nebula berhasil diinstal!${RESET}"
     exit 0
@@ -112,11 +86,10 @@ install_nebula() {
 install_elysium() {
     echo -e "${KUNING}Menginstall tema Elysium...${RESET}"
     install_nodejs
-    cd /var/www || { echo -e "${MERAH}Direktori /var/www tidak ditemukan.${RESET}"; exit 1; }
+    cd /var/www || exit 1
     wget "$elysium"
     unzip -o ElysiumTheme.zip
-    npm i -g yarn
-    cd pterodactyl || { echo -e "${MERAH}Direktori Pterodactyl tidak ditemukan.${RESET}"; exit 1; }
+    cd pterodactyl || exit 1
     php artisan migrate
     yarn
     run_yarn_build
@@ -128,7 +101,7 @@ install_elysium() {
 install_nooktheme() {
     install_nodejs
     echo -e "${KUNING}installing nook theme ${RESET}"
-    cd /var/www/pterodactyl || { echo -e "${MERAH}Direktori Pterodactyl tidak ditemukan.${RESET}"; exit 1; }
+    cd /var/www/pterodactyl || exit 1
     php artisan down
     curl -L https://github.com/alxzy-group/NookTheme/releases/latest/download/panel.tar.gz | tar -xzv
     chmod -R 755 storage/* bootstrap/cache
@@ -149,9 +122,6 @@ check_distro
 sudo apt update -y && sudo apt upgrade -y
 clear
 echo -e "${HIJAU}Selamat datang di Pterodactyl Theme Installer${RESET}"
-sleep 1
-echo -e "${HIJAU}Silakan memilih tema yang tersedia di bawah ini${RESET}"
-sleep 1
 PS3="Pilih tema (1-4): "
 
 select theme in "NebulaTheme" "ElysiumTheme" "NookTheme (Remake)" "Keluar"; do
@@ -169,11 +139,10 @@ select theme in "NebulaTheme" "ElysiumTheme" "NookTheme (Remake)" "Keluar"; do
             break
             ;;
         "Keluar")
-            echo -e "${KUNING}Terima kasih. Keluar dari installer.${RESET}"
             exit 0
             ;;
         *)
-            echo -e "${MERAH}Pilihan tidak valid. Silakan coba lagi.${RESET}"
+            echo -e "${MERAH}Pilihan tidak valid.${RESET}"
             ;;
     esac
 done
